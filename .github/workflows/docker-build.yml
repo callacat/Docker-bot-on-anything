@@ -5,8 +5,8 @@ on:
      paths:
        - '.github/workflows/docker-build.yml'
        - 'Dockerfile'
-  repository_dispatch:
-    types: [docker-build]
+   repository_dispatch:
+     types: [docker-build]
 
 jobs:
 
