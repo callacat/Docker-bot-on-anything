@@ -1,0 +1,34 @@
+FROM python:3.10-alpine
+
+ENV LANG C.UTF-8
+ENV TZ 'Asia/Shanghai'
+
+WORKDIR /app
+
+ADD bot-on-anything /app
+
+RUN if [ "$(apk --print-arch)" = "x86_64" ]; then \
+            MYARCH="amd64"; \
+        elif [ "$(apk --print-arch)" = "aarch64" ]; then \
+            MYARCH="arm64"; \
+        elif [ "$(apk --print-arch)" = "armhf" ]; then \
+            MYARCH="armv7"; \
+        elif [ "$(apk --print-arch)" = "i386" ]; then \
+            MYARCH="386"; \
+        else \
+            echo "Unknown architecture"; \
+            exit 1; \
+        fi \
+    && echo $MYARCH \
+    && apk update && apk add --no-cache tzdata ffmpeg && cd /tmp \
+    && latest=$(wget -qO- -t1 -T2 https://api.github.com/repos/Mrs4s/go-cqhttp/releases/latest | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g') \
+    && wget -q https://github.com/Mrs4s/go-cqhttp/releases/download/$latest/go-cqhttp_linux_$MYARCH.tar.gz -O go-cqhttp.tar.gz \
+    && tar -zxvf go-cqhttp.tar.gz && mv go-cqhttp /app/channel/qq/cqhttp \
+    && pip3 install --upgrade pip && pip3 install --upgrade openai \
+    && pip3 install aiocqhttp && pip install pyTelegramBotAPI \
+    && pip3 install PyJWT flask \
+    && ln -sf /usr/share/zoneinfo/$TZ /etc/localtime \
+    && echo $TZ > /etc/timezone \
+    && rm -rf /tmp/* /var/cache/apk/*
+
+ENTRYPOINT ["python3", "app.py"]
